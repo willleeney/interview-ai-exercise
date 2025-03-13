@@ -2,18 +2,23 @@
 
 from fastapi import FastAPI
 
-from src.constants import SETTINGS, chroma_client, openai_client
-from src.llm.completions import create_prompt, get_completion
-from src.llm.embeddings import openai_ef
-from src.loading.document_loader import (
+from ai_exercise.constants import SETTINGS, chroma_client, openai_client
+from ai_exercise.llm.completions import create_prompt, get_completion
+from ai_exercise.llm.embeddings import openai_ef
+from ai_exercise.loading.document_loader import (
     add_documents,
     build_docs,
     get_json_data,
     split_docs,
 )
-from src.models import ChatOutput, ChatQuery, HealthRouteOutput, LoadDocumentsOutput
-from src.retrieval.retrieval import get_relevant_chunks
-from src.retrieval.vector_store import create_collection
+from ai_exercise.models import (
+    ChatOutput,
+    ChatQuery,
+    HealthRouteOutput,
+    LoadDocumentsOutput,
+)
+from ai_exercise.retrieval.retrieval import get_relevant_chunks
+from ai_exercise.retrieval.vector_store import create_collection
 
 app = FastAPI()
 

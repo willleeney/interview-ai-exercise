@@ -1,57 +1,43 @@
-[tool.poetry]
-name = "rag-example"
+[project]
+name = "ai-exercise"
 version = "0.1.0"
 description = ""
-authors = ["Matt Carey <matt@stackone.com>"]
+authors = [
+    {name = "Matt Carey", email = "matt@stackone.com"}
+]
+requires-python = ">=3.11"
+dependencies = [
+    "openai>=1.54.4",
+    "watchdog>=3.0.0",
+    "chromadb>=0.5.18",
+    "fastapi>=0.115.5",
+    "langchain-text-splitters>=0.3.2",
+    "pydantic-settings>=2.6.1",
+]
 
-[tool.poetry.dependencies]
-python = "3.11.4"
-openai = "^1.54.4"
-watchdog = "^3.0.0"
-chromadb = "^0.5.18"
-fastapi = "^0.115.5"
-langchain-text-splitters = "^0.3.2"
-pydantic-settings = "^2.6.1"
-
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.2"
-pre-commit = "^2"
-pytest = "^7"
-pytest-cov = "^3"
-ruff = "^0.7.3"
-
-[tool.poetry.group.streamlit-demo.dependencies]
-streamlit = "^1.25.0"
-watchdog = "^3.0.0"
-streamlit-supabase-auth = "^1.0.2"
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.2",
+    "pytest>=7",
+    "pytest-cov>=3",
+    "ruff>=0.7.3",
+]
+streamlit-demo = [
+    "streamlit>=1.25.0",
+    "watchdog>=3.0.0",
+]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-# Packages configs
-
-## coverage
-
-[tool.coverage.run]
-branch = true
-
-[tool.coverage.report]
-skip_empty = true
-fail_under = 70.00
-precision = 2
-
-## black
-
-[tool.black]
-target-version = ['py311']
 
 ## ruff
-# Recommended ruff config for now, to be updated as we go along.
 [tool.ruff]
 target-version = 'py311'
 
-# See all rules at https://beta.ruff.rs/docs/rules/
+# See all rules at https://docs.astral.sh/ruff/rules/
+[tool.ruff.lint]
 select = [
     "E",   # pycodestyle
     "W",   # pycodestyle
@@ -70,37 +56,14 @@ select = [
 ]
 
 ignore = [
-    "E501", # "Line too long"
-    # -> line length already regulated by black
-    "PT011", # "pytest.raises() should specify expected exception"
-    # -> would imply to update tests every time you update exception message
-    "SIM102", # "Use a single `if` statement instead of nested `if` statements"
-    # -> too restrictive
     "D415", #annoying and unnecessary to need punctuation
     "D103", #I am lazy and I don't care about doc strings
     "W505",
 ]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 # Automatically disable rules that are incompatible with Google docstring convention
 convention = "google"
-
-[tool.ruff.pycodestyle]
-max-doc-length = 88
-
-[tool.ruff.flake8-tidy-imports]
-ban-relative-imports = "all"
-
-[tool.ruff.flake8-type-checking]
-strict = true
-runtime-evaluated-base-classes = ["pydantic.BaseModel"]
-# Pydantic needs to be able to evaluate types at runtime
-# see https://pypi.org/project/flake8-type-checking/ for flake8-type-checking documentation
-# see https://beta.ruff.rs/docs/settings/#flake8-type-checking-runtime-evaluated-base-classes for ruff documentation
-
-[tool.ruff.per-file-ignores]
-# Allow missing docstrings for tests
-"tests/**/*.py" = ["D1"]
 
 ## mypy
 

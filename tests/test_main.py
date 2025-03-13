@@ -1,6 +1,5 @@
 """Tests for `api/main.py`."""
 from fastapi.testclient import TestClient
-
 from src.main import app
 
 client = TestClient(app)

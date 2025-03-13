@@ -1,46 +1,34 @@
-# Docker multi-stage building, as recommended by https://fastapi.tiangolo.com/deployment/docker/#docker-image-with-poetry
-FROM python:3.11.4-slim-bookworm as curl-stage
-
-# Install curl ; remove apt cache to reduce image size
-RUN apt-get -y update && apt-get -y install curl  && rm -rf /var/lib/apt/lists/*
-
-
-FROM curl-stage as poetry-requirements-stage
-
-WORKDIR /tmp
-
-ENV HOME /root
-ENV PATH=${PATH}:$HOME/.local/bin
-
-# Install poetry
-RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.5.1 python3 -
-
-# Export requirements.txt
-COPY ./pyproject.toml ./poetry.lock* /tmp/
-RUN poetry export -f requirements.txt --output requirements.txt --without-hashes --no-interaction --no-cache --only=main
-
-
-FROM curl-stage
+FROM python:3.11-slim
 
 WORKDIR /code
 
-ENV \
-    # Prevent Python from buffering stdout and stderr and loosing some logs (equivalent to python -u option)
-    PYTHONUNBUFFERED=1 \
-    # Prevent Pip from timing out when installing heavy dependencies
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy uv binary from official image
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
     PIP_DEFAULT_TIMEOUT=600 \
-    # Prevent Pip from creating a cache directory to reduce image size
-    PIP_NO_CACHE_DIR=1
+    UV_SYSTEM_PYTHON=1
 
-# Install dependencies with pip from exported requirements.txt
-COPY --from=poetry-requirements-stage /tmp/requirements.txt /code/requirements.txt
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+# Copy project files for dependency installation
+COPY pyproject.toml ./
 
-# Copy API files
-COPY src ./src
+# Generate requirements.txt from pyproject.toml and install dependencies
+RUN uv pip compile pyproject.toml -o requirements.txt && \
+    uv pip install -r requirements.txt uvicorn
 
-# Start FastAPI
-CMD uvicorn src.main:app --host 0.0.0.0 --port 80 --reload
+# Copy application code
+COPY ai_exercise ./ai_exercise
+
+# Expose port
+EXPOSE 80
+
+# Start FastAPI with hot reload
+CMD ["uvicorn", "ai_exercise.main:app", "--host", "0.0.0.0", "--port", "80", "--reload"]
 
 # Healthcheck
-HEALTHCHECK --interval=100s --timeout=1s --retries=3 CMD curl --fail http://localhost/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD curl --fail http://localhost/health || exit 1

@@ -1,35 +1,39 @@
+install:
+	uv sync --all-extras
+
 ########################################################################################################################
 # Quality checks
 ########################################################################################################################
 
 test:
-	poetry run pytest tests
+	uv run pytest tests
 
-ruff:
-	poetry run ruff check src tests
+lint:
+	uv run ruff check ai_exercise tests
 
-fix-ruff:
-	poetry run ruff check src tests --fix
+format:
+	uv run ruff check ai_exercise tests --fix
 
-mypy:
-	poetry run mypy src
+typecheck:
+	uv run mypy ai_exercise
+
 
 ########################################################################################################################
 # Api
 ########################################################################################################################
 
 start-api:
-	docker compose up -d
+	docker compose up
 
 dev-api:
-	PYTHONPATH=. poetry run python src/main.py
+	uv run ai_exercise/main.py
 
 ########################################################################################################################
 # Streamlit
 ########################################################################################################################
 
 start-app:
-	PYTHONPATH=. streamlit run demo/main.py
+	uv run streamlit run demo/main.py
 
 
 

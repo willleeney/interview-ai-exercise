@@ -7,9 +7,9 @@ import chromadb
 import requests
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from src.constants import SETTINGS
-from src.loading.chunk_json import chunk_data
-from src.models import Document
+from ai_exercise.constants import SETTINGS
+from ai_exercise.loading.chunk_json import chunk_data
+from ai_exercise.models import Document
 
 
 def get_json_data() -> dict[str, Any]:
