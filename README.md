@@ -1,6 +1,6 @@
-# rag-example
+# AI Exercise - Retrieval
 
-> Very simple RAG example
+> simple RAG example
 
 ## Project requirements
 
