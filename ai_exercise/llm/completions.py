@@ -2,7 +2,6 @@
 
 from openai import OpenAI
 
-
 def create_prompt(query: str, context: list[str]) -> str:
     """Create a prompt combining query and context"""
     context_str = "\n\n".join(context)

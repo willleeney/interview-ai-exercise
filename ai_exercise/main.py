@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 
 from ai_exercise.constants import SETTINGS, chroma_client, openai_client
-from ai_exercise.llm.completions import create_prompt, get_completion
+from ai_exercise.llm.completions import get_completion, create_prompt
 from ai_exercise.llm.embeddings import openai_ef
 from ai_exercise.loading.document_loader import (
     add_documents,
@@ -17,8 +17,8 @@ from ai_exercise.models import (
     HealthRouteOutput,
     LoadDocumentsOutput,
 )
-from ai_exercise.retrieval.retrieval import get_relevant_chunks
 from ai_exercise.retrieval.vector_store import create_collection, empty_collection
+from ai_exercise.retrieval.retrieval import get_relevant_chunks
 
 app = FastAPI()
 
@@ -50,7 +50,7 @@ async def load_docs_route() -> LoadDocumentsOutput:
         spec_name = api_url.split("/")[-1].split(".")[0]
         add_documents(collection, documents, spec_name)
         print(f"Added {len(documents)} to collection")
-        
+
         # check the number of documents in the collection
         print(f"Number of documents in collection: {collection.count()}")
 
@@ -67,7 +67,6 @@ def chat_route(chat_query: ChatQuery) -> ChatOutput:
 
     # Create prompt with context
     prompt = create_prompt(query=chat_query.query, context=relevant_chunks)
-
     print(f"Prompt: {prompt}")
 
     # Get completion from LLM
@@ -76,7 +75,7 @@ def chat_route(chat_query: ChatQuery) -> ChatOutput:
         prompt=prompt,
         model=SETTINGS.openai_model,
     )
-
+    
     return ChatOutput(message=result)
 
 
