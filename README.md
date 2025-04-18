@@ -1,7 +1,5 @@
 # AI Exercise - Retrieval
 
-> simple RAG example
-
 ## Project requirements
 
 ### uv
@@ -85,3 +83,30 @@ Have a look in `ai_exercise/constants.py`. Then check out the server routes in `
 - Try different embeddings models
 - Other types of models which may be relevant
 - How else could you store the data for better retrieval?
+
+
+-------------
+# Running an Evaluation
+
+Use `make-install` and fill out `.env` file, then this will run the evaluation comparing the bad and the better chunking methods: 
+
+```bash
+make eval
+```
+
+
+# Features and Improvements 
+
+1. Comprehensive Evaluation Questions. I used your example questions as a template to generate more questions using the RAG system. This is not ideal as is it using an untested RAG system to generate the test set, so the test is obviously biased and neither are they verifiably good or useful questions. A better way would be to utilise knowledge from StackOne developers and customers to develop list of common questions targeting known areas where the RAG system struggles. Ideally, include a reference list of answers that provide the correct answer. 
+
+2. Chunking logic. I have implemented a basic semantic chunking to split the json into more complete chunks. This is still not optimal as sometimes the information is cut at different levels of the hierarchy.
+
+3. Knowledge graph representation of the json for RAG. A better representation of the json file might be a graph as it is more complete way to represent the structure. A graph RAG system would fetch the relevant nodes which might correspond to levels of the json hierarchy. 
+
+4. Hyperparameter Optimisation. One could experiment with different parameters such as `k_neighbours` or `embedding_model` to gain extra performance. This could be multi-objective + Bayesian to effectively optimise for the multiple metrics given in `eval.py`. Other metrics of performance can also be included as this is a rather limited scope as is. 
+
+5. Prompt engineering. Carry out some prompt engineering to give the LLM more context on the task.
+
+6. Improve on the nearest neighbours search in the embedding model for context retrieval using something like BM-25 to rerank documents based on query term occurrence and rarity across the documents.
+
+7. Make code ready for Production... Expand on the unit tests. Host API for the model so that the rate limits in the eval system are not painful to any end user. Make sure code is safe from prompt injection. 

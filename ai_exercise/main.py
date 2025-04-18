@@ -3,22 +3,21 @@
 from fastapi import FastAPI
 
 from ai_exercise.constants import SETTINGS, chroma_client, openai_client
-from ai_exercise.llm.completions import create_prompt, get_completion
+from ai_exercise.llm.completions import get_completion, create_prompt
 from ai_exercise.llm.embeddings import openai_ef
 from ai_exercise.loading.document_loader import (
-    add_documents,
-    build_docs,
-    get_json_data,
-    split_docs,
+    bad_chunking,
+    better_chunking
 )
 from ai_exercise.models import (
     ChatOutput,
     ChatQuery,
     HealthRouteOutput,
     LoadDocumentsOutput,
+    EmptyDocumentsOutput
 )
+from ai_exercise.retrieval.vector_store import create_collection, empty_collection
 from ai_exercise.retrieval.retrieval import get_relevant_chunks
-from ai_exercise.retrieval.vector_store import create_collection
 
 app = FastAPI()
 
@@ -31,20 +30,22 @@ def health_check_route() -> HealthRouteOutput:
     return HealthRouteOutput(status="ok")
 
 
+@app.get("/empty")
+def empty_docs_route() -> HealthRouteOutput:
+    """Route to empty the vector storage"""
+    empty_collection(collection)
+    assert collection.count() == 0
+    return EmptyDocumentsOutput(status="ok")
+
+
 @app.get("/load")
 async def load_docs_route() -> LoadDocumentsOutput:
-    """Route to load documents into vector store."""
-    json_data = get_json_data()
-    documents = build_docs(json_data)
+    """Route to load documents into vector store. """
 
-    # split docs
-    documents = split_docs(documents)
-
-    # load documents into vector store
-    add_documents(collection, documents)
-
-    # check the number of documents in the collection
-    print(f"Number of documents in collection: {collection.count()}")
+    if SETTINGS.chunking_method == "bad":
+        bad_chunking(collection) 
+    elif SETTINGS.chunking_method == "better?":
+        better_chunking(collection)
 
     return LoadDocumentsOutput(status="ok")
 
@@ -59,7 +60,6 @@ def chat_route(chat_query: ChatQuery) -> ChatOutput:
 
     # Create prompt with context
     prompt = create_prompt(query=chat_query.query, context=relevant_chunks)
-
     print(f"Prompt: {prompt}")
 
     # Get completion from LLM
@@ -68,7 +68,7 @@ def chat_route(chat_query: ChatQuery) -> ChatOutput:
         prompt=prompt,
         model=SETTINGS.openai_model,
     )
-
+    
     return ChatOutput(message=result)
 
 

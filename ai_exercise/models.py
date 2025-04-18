@@ -18,6 +18,10 @@ class HealthRouteOutput(BaseModel):
 
     status: str
 
+class EmptyDocumentsOutput(BaseModel):
+    """Model for the empty route output."""
+
+    status: str
 
 class LoadDocumentsOutput(BaseModel):
     """Model for the load documents route output."""
