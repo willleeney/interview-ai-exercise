@@ -34,17 +34,21 @@ def health_check_route() -> HealthRouteOutput:
 @app.get("/load")
 async def load_docs_route() -> LoadDocumentsOutput:
     """Route to load documents into vector store."""
-    json_data = get_json_data()
-    documents = build_docs(json_data)
+    for api_url in SETTINGS.docs_url:
+        # get the json data
+        json_data = get_json_data(api_url)
 
-    # split docs
-    documents = split_docs(documents)
+        # build documents
+        documents = build_docs(json_data)
 
-    # load documents into vector store
-    add_documents(collection, documents)
+        # split docs
+        documents = split_docs(documents)
 
-    # check the number of documents in the collection
-    print(f"Number of documents in collection: {collection.count()}")
+        # load documents into vector store
+        add_documents(collection, documents)
+
+        # check the number of documents in the collection
+        print(f"Number of documents in collection: {collection.count()}")
 
     return LoadDocumentsOutput(status="ok")
 

@@ -12,9 +12,9 @@ from ai_exercise.loading.chunk_json import chunk_data
 from ai_exercise.models import Document
 
 
-def get_json_data() -> dict[str, Any]:
-    # Send a GET request to the URL specified in SETTINGS.DOCS_URL
-    response = requests.get(SETTINGS.docs_url)
+def get_json_data(api_url: str) -> dict[str, Any]:
+    """Send a GET request to the URL specified by api_url"""
+    response = requests.get(api_url)
     json_data = response.json()
     response.raise_for_status()
 
