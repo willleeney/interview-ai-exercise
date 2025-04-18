@@ -9,7 +9,7 @@ from ai_exercise.loading.document_loader import (
     add_documents,
     build_docs,
     get_json_data,
-    split_docs,
+    split_docs
 )
 from ai_exercise.models import (
     ChatOutput,
@@ -18,7 +18,7 @@ from ai_exercise.models import (
     LoadDocumentsOutput,
 )
 from ai_exercise.retrieval.retrieval import get_relevant_chunks
-from ai_exercise.retrieval.vector_store import create_collection
+from ai_exercise.retrieval.vector_store import create_collection, empty_collection
 
 app = FastAPI()
 
@@ -33,7 +33,9 @@ def health_check_route() -> HealthRouteOutput:
 
 @app.get("/load")
 async def load_docs_route() -> LoadDocumentsOutput:
-    """Route to load documents into vector store."""
+    """Route to empty current collection and load documents into vector store. """
+    empty_collection(collection)
+
     for api_url in SETTINGS.docs_url:
         # get the json data
         json_data = get_json_data(api_url)
@@ -45,8 +47,10 @@ async def load_docs_route() -> LoadDocumentsOutput:
         documents = split_docs(documents)
 
         # load documents into vector store
-        add_documents(collection, documents)
-
+        spec_name = api_url.split("/")[-1].split(".")[0]
+        add_documents(collection, documents, spec_name)
+        print(f"Added {len(documents)} to collection")
+        
         # check the number of documents in the collection
         print(f"Number of documents in collection: {collection.count()}")
 

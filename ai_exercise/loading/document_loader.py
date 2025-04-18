@@ -46,10 +46,13 @@ def split_docs(docs_array: list[Document]) -> list[Document]:
     return splitter.split_documents(docs_array)
 
 
-def add_documents(collection: chromadb.Collection, docs: list[Document]) -> None:
+def add_documents(
+        collection: chromadb.Collection, 
+        docs: list[Document],
+        spec_name: str) -> None:
     """Add documents to the collection"""
     collection.add(
         documents=[doc.page_content for doc in docs],
         metadatas=[doc.metadata or {} for doc in docs],
-        ids=[f"doc_{i}" for i in range(len(docs))],
+        ids=[f"{spec_name}_doc_{i}" for i in range(len(docs))],
     )
