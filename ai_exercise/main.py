@@ -16,6 +16,7 @@ from ai_exercise.models import (
     ChatQuery,
     HealthRouteOutput,
     LoadDocumentsOutput,
+    EmptyDocumentsOutput
 )
 from ai_exercise.retrieval.vector_store import create_collection, empty_collection
 from ai_exercise.retrieval.retrieval import get_relevant_chunks
@@ -29,6 +30,14 @@ collection = create_collection(chroma_client, openai_ef, SETTINGS.collection_nam
 def health_check_route() -> HealthRouteOutput:
     """Health check route to check that the API is up."""
     return HealthRouteOutput(status="ok")
+
+
+@app.get("/empty")
+def health_check_route() -> HealthRouteOutput:
+    """Health check route to check that the API is up."""
+    empty_collection(collection)
+    assert collection.count() == 0
+    return EmptyDocumentsOutput(status="ok")
 
 
 @app.get("/load")

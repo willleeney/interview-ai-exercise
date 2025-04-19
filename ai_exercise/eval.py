@@ -9,6 +9,9 @@ from ai_exercise.constants import SETTINGS, openai_client, chroma_client
 from ai_exercise.retrieval.vector_store import create_collection
 collection = create_collection(chroma_client, openai_ef, SETTINGS.collection_name)
 
+# Load 
+from ai_exercise.main import load_docs_route
+import asyncio
 from ai_exercise.retrieval.retrieval import get_relevant_chunks
 from ai_exercise.llm.completions import get_completion, create_prompt
 
@@ -17,6 +20,7 @@ from ragas import evaluate
 from ragas.llms import LangchainLLMWrapper
 from langchain_openai import ChatOpenAI
 from ragas.metrics import ResponseRelevancy, Faithfulness, LLMContextPrecisionWithoutReference
+
 
 evaluator_llm = LangchainLLMWrapper(ChatOpenAI(
     model="gpt-4o",
@@ -86,10 +90,18 @@ def create_test_responses():
     return dataset
 
 
+async def load_docs():
+    await load_docs_route()
+    print(f"Total documents: {collection.count()}")
+
+
 def main():
     """
     Main function to run the evaluation
     """
+    # Load docs into the storage
+    asyncio.run(load_docs())
+
     # Create example responses from test queries
     dataset = create_test_responses()
 

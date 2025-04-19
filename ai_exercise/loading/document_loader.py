@@ -47,9 +47,9 @@ def split_docs(docs_array: list[Document]) -> list[Document]:
 
 
 def add_documents(
-        collection: chromadb.Collection, 
-        docs: list[Document],
-        spec_name: str) -> None:
+    collection: chromadb.Collection, 
+    docs: list[Document],
+    spec_name: str) -> None:
     """Add documents to the collection"""
     collection.add(
         documents=[doc.page_content for doc in docs],

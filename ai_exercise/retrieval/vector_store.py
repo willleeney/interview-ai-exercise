@@ -23,5 +23,4 @@ def empty_collection(collection: chromadb.Collection):
     else:
         print("Collection is already empty, nothing to delete.")
 
-    assert collection.count() == 0
     return
