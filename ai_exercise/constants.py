@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     chunk_size: int = 1000
     k_neighbors: int = 5
 
+    chunking_method: str = "better?"
+
     # Point to all specs
     docs_url: list[str] = [
         "https://api.eu1.stackone.com/oas/stackone.json",

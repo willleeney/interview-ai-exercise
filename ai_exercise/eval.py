@@ -10,8 +10,8 @@ from ai_exercise.retrieval.vector_store import create_collection
 collection = create_collection(chroma_client, openai_ef, SETTINGS.collection_name)
 
 # Load 
-from ai_exercise.main import load_docs_route
-import asyncio
+from ai_exercise.loading.document_loader import bad_chunking, better_chunking
+from ai_exercise.retrieval.vector_store import empty_collection
 from ai_exercise.retrieval.retrieval import get_relevant_chunks
 from ai_exercise.llm.completions import get_completion, create_prompt
 
@@ -21,11 +21,6 @@ from ragas.llms import LangchainLLMWrapper
 from langchain_openai import ChatOpenAI
 from ragas.metrics import ResponseRelevancy, LLMContextPrecisionWithoutReference
 import re
-
-
-async def load_docs():
-    await load_docs_route()
-    print(f"Total documents: {collection.count()}")
 
 
 def parse_question_list(text):
@@ -137,10 +132,6 @@ def main():
     """
     Main function to run the evaluation
     """
-    print("Loading docs into storage")
-    # Load docs into the storage
-    asyncio.run(load_docs())
-
     real_questions = [
         "How do you authenticate to the StackOne API?",
         "Can I retrieve all linked accounts with workday provider?",
@@ -148,18 +139,29 @@ def main():
         "What fields must be sent to create a course on an LMS?",
         "What is the response body when listing an employee?",
     ]
+    
+    for chunk_fn in ["bad_chunking", "better_chunking"]:
+        print(f"Testing chunking method: {chunk_fn}")
+        print("Loading docs into storage")
+        # Load docs into the storage
+        empty_collection(collection)
+        if chunk_fn in globals():
+            globals()[chunk_fn](collection)
+        else:
+            print(f"Function {chunk_fn} not found")
+            continue
+        
+        print("Generating test dataset")
+        test_dataset = generate_synth_testset(real_questions)
 
-    print("Generating test dataset")
-    test_dataset = generate_synth_testset(real_questions)
+        # Create example responses from test queries
+        print("Generating RAG system reponses")
+        test_dataset.extend(real_questions)
+        dataset = generate_test_responses(test_dataset)
 
-    # Create example responses from test queries
-    print("Generating RAG system reponses")
-    test_dataset.extend(real_questions)
-    dataset = generate_test_responses(test_dataset)
-
-    # Run the evaluation
-    print("Evaluating quality of responses")
-    metrics = run_evaluation(dataset)
+        # Run the evaluation
+        print("Evaluating quality of responses")
+        metrics = run_evaluation(dataset)
     
 
 if __name__ == "__main__":

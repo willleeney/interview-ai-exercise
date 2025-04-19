@@ -6,10 +6,8 @@ from ai_exercise.constants import SETTINGS, chroma_client, openai_client
 from ai_exercise.llm.completions import get_completion, create_prompt
 from ai_exercise.llm.embeddings import openai_ef
 from ai_exercise.loading.document_loader import (
-    add_documents,
-    build_docs,
-    get_json_data,
-    split_docs
+    bad_chunking,
+    better_chunking
 )
 from ai_exercise.models import (
     ChatOutput,
@@ -44,23 +42,10 @@ def empty_docs_route() -> HealthRouteOutput:
 async def load_docs_route() -> LoadDocumentsOutput:
     """Route to load documents into vector store. """
 
-    for api_url in SETTINGS.docs_url:
-        # get the json data
-        json_data = get_json_data(api_url)
-
-        # build documents
-        documents = build_docs(json_data)
-
-        # split docs
-        documents = split_docs(documents)
-
-        # load documents into vector store
-        spec_name = api_url.split("/")[-1].split(".")[0]
-        add_documents(collection, documents, spec_name)
-        print(f"Added {len(documents)} to collection")
-
-        # check the number of documents in the collection
-        print(f"Number of documents in collection: {collection.count()}")
+    if SETTINGS.chunking_method == "bad":
+        bad_chunking(collection) 
+    elif SETTINGS.chunking_method == "better?":
+        better_chunking(collection)
 
     return LoadDocumentsOutput(status="ok")
 
