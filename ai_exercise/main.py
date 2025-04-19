@@ -33,8 +33,8 @@ def health_check_route() -> HealthRouteOutput:
 
 
 @app.get("/empty")
-def health_check_route() -> HealthRouteOutput:
-    """Health check route to check that the API is up."""
+def empty_docs_route() -> HealthRouteOutput:
+    """Route to empty the vector storage"""
     empty_collection(collection)
     assert collection.count() == 0
     return EmptyDocumentsOutput(status="ok")
@@ -42,8 +42,7 @@ def health_check_route() -> HealthRouteOutput:
 
 @app.get("/load")
 async def load_docs_route() -> LoadDocumentsOutput:
-    """Route to empty current collection and load documents into vector store. """
-    empty_collection(collection)
+    """Route to load documents into vector store. """
 
     for api_url in SETTINGS.docs_url:
         # get the json data

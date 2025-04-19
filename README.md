@@ -1,7 +1,5 @@
 # AI Exercise - Retrieval
 
-> simple RAG example
-
 ## Project requirements
 
 ### uv
@@ -85,3 +83,29 @@ Have a look in `ai_exercise/constants.py`. Then check out the server routes in `
 - Try different embeddings models
 - Other types of models which may be relevant
 - How else could you store the data for better retrieval?
+
+
+-------------
+# Running an Evaluation
+
+```bash
+make eval
+```
+
+
+# Features and Improvements 
+
+1. Comprehensive Evaluation Questions. I used your example questions as a template to generate more questions using the RAG system. This is not ideal as is it using an untested RAG system to generate the test set, so the test is obviously biased and neither are they verifiably good or useful questions. A better way would be to utilise knowledge from StackOne developers and customers to develop list of common questions targeting known areas where the RAG system struggles. Ideally, include a reference list of answers that provide the correct answer. 
+
+2. Improve on the chunking logic
+
+3. Carry out a Hyperparameter Optimisation on parameters such as `k_neighbours` or `embedding_model` to gain extra performance. This could be multi-objective to optimise for the multiple metrics given in `eval.py`. In a similar vein, include more metrics of performance. 
+
+4. Carry out some prompt engineering to give the LLM more context on the task.
+
+5. Improve on the nearest neighbours search in the embedding model for context reterival 
+- BM-25 + re-ranker
+
+6. Expand on the unit tests. 
+
+7. knowledge graph representation of the json for rag

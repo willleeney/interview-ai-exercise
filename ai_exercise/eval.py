@@ -19,51 +19,71 @@ from ragas import EvaluationDataset
 from ragas import evaluate
 from ragas.llms import LangchainLLMWrapper
 from langchain_openai import ChatOpenAI
-from ragas.metrics import ResponseRelevancy, Faithfulness, LLMContextPrecisionWithoutReference
+from ragas.metrics import ResponseRelevancy, LLMContextPrecisionWithoutReference
+import re
 
 
-evaluator_llm = LangchainLLMWrapper(ChatOpenAI(
-    model="gpt-4o",
-    client=openai_client 
-))
+async def load_docs():
+    await load_docs_route()
+    print(f"Total documents: {collection.count()}")
 
-from tqdm import tqdm 
 
-def run_evaluation(test_queries_dataset: list):
+def parse_question_list(text):
     """
-    Run the RAG evaluation on a set of test queries
+    Parse a numbered list of questions into a list of strings.
     """
-    # Run evaluation
-    print("Starting evaluation...")
-    evaluation_dataset = EvaluationDataset.from_list(test_queries_dataset)
+    # Regular expression to match numbered questions
+    # This pattern looks for:
+    # - A number followed by a period and space at the beginning of a line
+    # - Then captures all text until the next numbered question or end of string
+    pattern = r'^\s*\d+\.\s*(.*?)(?=\n\s*\d+\.|$)'
+    
+    # Find all matches in the text using the regex pattern
+    # re.MULTILINE makes ^ match the start of each line
+    # re.DOTALL makes . match newlines as well
+    questions = re.findall(pattern, text, re.MULTILINE | re.DOTALL)
+    
+    # Trim whitespace from each question
+    questions = [q.strip() for q in questions]
+    
+    return questions
 
-    result = evaluate(
-        dataset=evaluation_dataset, 
-        metrics=[LLMContextPrecisionWithoutReference(), Faithfulness(), ResponseRelevancy()],
-        llm=evaluator_llm
+
+def generate_synth_testset(real_questions):
+    """Generate a list of synthetic questions based on real questions. """
+    query = (
+        "Given this list of example questions, generate 50 more questions. "
+        "The context these questions will be used in is to test a RAG system to help anwser question on an API spec."
+        "Also given is some context on what the API spec looks like. \n"
     )
+
+    example_questions = "Example questions: \n" + "\n".join(real_questions)
+
+   
+    relevant_chunks = get_relevant_chunks(
+        collection=collection, query=query + example_questions, k=50
+    )
+    context = "Context: " + "\n\n".join(relevant_chunks)
+    answer = "\nList of questions: "
+
+    prompt = query + example_questions + context + answer
     
-    # Print results
-    print("Evaluation completed")
-    print("Aggregate Metrics:")
-    for metric, value in result._repr_dict.items():
-        print(f"{metric}: {value:.4f}")
-    
-    
-    return result
+    result = get_completion(
+        client=openai_client,
+        prompt=prompt,
+        model=SETTINGS.openai_model,
+    )
+
+    test_questions = parse_question_list(result)
+    return test_questions
 
 
-def create_test_responses():
-    test_queries = [
-        "How do you authenticate to the StackOne API?",
-        "Can I retrieve all linked accounts with workday provider?",
-        "What is the default expiry of the session token?",
-        "What fields must be sent to create a course on an LMS?",
-        "What is the response body when listing an employee?",
-    ]
+def generate_test_responses(test_questions):
+    """Generate """
+
     dataset = []
 
-    for query in tqdm(test_queries):
+    for query in test_questions:
         # Get relevant chunks from the collection
         relevant_chunks = get_relevant_chunks(
             collection=collection, query=query, k=SETTINGS.k_neighbors
@@ -90,22 +110,55 @@ def create_test_responses():
     return dataset
 
 
-async def load_docs():
-    await load_docs_route()
-    print(f"Total documents: {collection.count()}")
+def run_evaluation(test_queries_dataset: list):
+    """
+    Run the RAG evaluation on a set of test queries
+    """
+    evaluation_dataset = EvaluationDataset.from_list(test_queries_dataset)
+    evaluator_llm = LangchainLLMWrapper(ChatOpenAI(
+        model=SETTINGS.openai_model,
+        client=openai_client 
+    ))
+
+    result = evaluate(
+        dataset=evaluation_dataset, 
+        metrics=[LLMContextPrecisionWithoutReference(), ResponseRelevancy()],
+        llm=evaluator_llm
+    )
+    
+    print("Evaluation Metrics:")
+    for metric, value in result._repr_dict.items():
+        print(f"{metric}: {value:.4f}")
+    
+    return result
 
 
 def main():
     """
     Main function to run the evaluation
     """
+    print("Loading docs into storage")
     # Load docs into the storage
     asyncio.run(load_docs())
 
+    real_questions = [
+        "How do you authenticate to the StackOne API?",
+        "Can I retrieve all linked accounts with workday provider?",
+        "What is the default expiry of the session token?",
+        "What fields must be sent to create a course on an LMS?",
+        "What is the response body when listing an employee?",
+    ]
+
+    print("Generating test dataset")
+    test_dataset = generate_synth_testset(real_questions)
+
     # Create example responses from test queries
-    dataset = create_test_responses()
+    print("Generating RAG system reponses")
+    test_dataset.extend(real_questions)
+    dataset = generate_test_responses(test_dataset)
 
     # Run the evaluation
+    print("Evaluating quality of responses")
     metrics = run_evaluation(dataset)
     
 

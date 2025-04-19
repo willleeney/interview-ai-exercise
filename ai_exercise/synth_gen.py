@@ -1,11 +1,3 @@
-
-# from ragas.testset.transforms import NERExtractor
-# from ragas.testset.transforms import apply_transforms, Parallel
-# from ragas.testset.graph import Node, KnowledgeGraph
-# from ragas.testset.transforms.relationship_builders.traditional import JaccardSimilarityBuilder, CosineSimilarityBuilder
-# from ragas.testset.transforms.relationship_builders.llm import SemanticTripleExtractor
-
-
 """
 Main function to create synthetic database
 """
@@ -36,10 +28,10 @@ import random
 
 def extract_all_json_data() -> list[str]:
     """Extract json information from each api url"""
-    api_docs = []
+    api_docs = ""
     for api_url in SETTINGS.docs_url:
         json_data = get_json_data(api_url)
-        api_docs.append(json_data)
+        api_docs += f"OPEN AI SPEC FOR {SETTINGS.docs_url} IS: " + json_data
     return api_docs
 
 
@@ -237,20 +229,58 @@ def generate_synthetic_queries(kg: KnowledgeGraph, num_queries: int = 10) -> lis
     
     return queries[:num_queries]
 
+
 from ai_exercise.retrieval.retrieval import get_relevant_chunks
-from ai_exercise.llm.completions import get_completion, create_prompt
+from ai_exercise.llm.completions import get_completion
+
+import re
+
+
+def parse_question_list(text):
+    """
+    Parse a numbered list of questions into a list of strings.
+    """
+    # Regular expression to match numbered questions
+    # This pattern looks for:
+    # - A number followed by a period and space at the beginning of a line
+    # - Then captures all text until the next numbered question or end of string
+    pattern = r'^\s*\d+\.\s*(.*?)(?=\n\s*\d+\.|$)'
+    
+    # Find all matches in the text using the regex pattern
+    # re.MULTILINE makes ^ match the start of each line
+    # re.DOTALL makes . match newlines as well
+    questions = re.findall(pattern, text, re.MULTILINE | re.DOTALL)
+    
+    # Trim whitespace from each question
+    questions = [q.strip() for q in questions]
+    
+    return questions
+
 
 def main():
-    query = "Can I filter employees by department when using the list endpoint?"
+    query = (
+        "Given this list of example questions, generate 50 more questions. "
+        "The context these questions will be used in is to test a RAG system to help anwser question on an API spec."
+        "Also given is some context on what the API spec looks like. \n"
+    )
+
+    questions = (
+        "Example questions: \n"
+        "How do you authenticate to the StackOne API?"
+        "Can I retrieve all linked accounts with workday provider?"
+        "What is the default expiry of the session token?"
+        "What fields must be sent to create a course on an LMS?"
+        "What is the response body when listing an employee?"
+    )
 
     # Get relevant chunks from the collection
     relevant_chunks = get_relevant_chunks(
-        collection=collection, query=query, k=SETTINGS.k_neighbors
+        collection=collection, query=query + questions, k=50
     )
+    context = "Context: " + "\n\n".join(relevant_chunks)
+    answer = "\nList of questions: "
 
-    # Create prompt with context
-    prompt = create_prompt(query=query, context=relevant_chunks)
-
+    prompt = query + questions + context + answer
     # Get completion from LLM
     result = get_completion(
         client=openai_client,
@@ -258,23 +288,7 @@ def main():
         model=SETTINGS.openai_model,
     )
 
-    # from ragas.embeddings import LlamaIndexEmbeddingsWrapper
-    # embedding_model = LlamaIndexEmbeddingsWrapper(openai_ef)
-
-    # generator = TestsetGenerator(llm=evaluator_llm, embedding_model=embedding_model)
-    # dataset = generator.generate(testset_size=10)
-
-
-    api_docs = extract_all_json_data()
-
-    nodes = create_nodes_from_json(api_docs)
-    
-    kg = build_knowledge_graph(nodes)
-
-    queries = generate_synthetic_queries(kg, num_queries=20)
-
-    print(queries)
-
+    test_questions = parse_question_list(result)
     return
 
 
